@@ -1,8 +1,14 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi, beforeEach } from 'vitest';
 import { TodoProvider } from '../contexts/TodoContext';
+import { ToastProvider } from '../contexts/ToastContext';
 import { useTodo } from '../hooks/useTodo';
-// import { act } from 'react-dom/test-utils';
+import * as sessionStorageUtils from '../utils/sessionStorage';
+
+// Mock the sessionStorage utilities
+vi.mock('../utils/sessionStorage');
 
 const TestComponent = () => {
   const { todos, addTodo, toggleTodoCompletion, deleteTodo } = useTodo();
@@ -32,13 +38,25 @@ const TestComponent = () => {
   );
 };
 
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <ToastProvider>
+      <TodoProvider>{component}</TodoProvider>
+    </ToastProvider>
+  );
+};
+
 describe('TodoContext', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock loadTodos to return empty array
+    vi.mocked(sessionStorageUtils.loadTodos).mockReturnValue([]);
+    // Mock saveTodos to return true (successful save)
+    vi.mocked(sessionStorageUtils.saveTodos).mockReturnValue(true);
+  });
+
   it('provides empty todos array initially', () => {
-    render(
-      <TodoProvider>
-        <TestComponent />
-      </TodoProvider>
-    );
+    renderWithProviders(<TestComponent />);
 
     expect(screen.getByTestId('todo-count').textContent).toBe('0');
   });
@@ -46,11 +64,7 @@ describe('TodoContext', () => {
   it('can add a new todo', async () => {
     const user = userEvent.setup();
 
-    render(
-      <TodoProvider>
-        <TestComponent />
-      </TodoProvider>
-    );
+    renderWithProviders(<TestComponent />);
 
     await user.click(screen.getByTestId('add-todo'));
 
@@ -62,11 +76,7 @@ describe('TodoContext', () => {
   it('can toggle todo completion status', async () => {
     const user = userEvent.setup();
 
-    render(
-      <TodoProvider>
-        <TestComponent />
-      </TodoProvider>
-    );
+    renderWithProviders(<TestComponent />);
 
     await user.click(screen.getByTestId('add-todo'));
 
@@ -89,11 +99,7 @@ describe('TodoContext', () => {
   it('can delete a todo', async () => {
     const user = userEvent.setup();
 
-    render(
-      <TodoProvider>
-        <TestComponent />
-      </TodoProvider>
-    );
+    renderWithProviders(<TestComponent />);
 
     await user.click(screen.getByTestId('add-todo'));
 
